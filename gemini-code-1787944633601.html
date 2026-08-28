@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>God of War II - Saga Narrativa</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(rgba(10, 10, 12, 0.75), rgba(10, 10, 12, 0.85)), 
+                        url('https://images.unsplash.com/photo-1555993539-1732b0258235?q=80&w=1920&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            color: #e0e0e0;
+            font-family: 'Georgia', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        #game-box {
+            width: 100%;
+            max-width: 850px;
+            background: rgba(20, 20, 25, 0.94);
+            border: 2px solid #8b0000;
+            box-shadow: 0 0 35px rgba(139, 0, 0, 0.6);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(4px);
+        }
+        #stats-bar {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(10, 10, 12, 0.9);
+            padding: 12px 24px;
+            border-bottom: 1px solid #333;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
+        .stat-label { color: #aaa; }
+        .stat-val { font-weight: bold; }
+        #val-hp { color: #ff4d4d; }
+        #val-rage { color: #ff9900; }
+        
+        #story-container {
+            padding: 30px;
+            min-height: 240px;
+            background: radial-gradient(circle at center, rgba(28, 28, 36, 0.8) 0%, rgba(17, 17, 22, 0.9) 100%);
+            border-bottom: 1px solid #222;
+        }
+        #speaker-title {
+            font-size: 16px;
+            color: #d4af37;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+        #dialogue-text {
+            font-size: 17px;
+            line-height: 1.6;
+            color: #d8d8d8;
+        }
+        #choices-container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(15, 15, 19, 0.9);
+        }
+        .choice-btn {
+            background: #1c1b22;
+            color: #c5a059;
+            border: 1px solid #443422;
+            padding: 14px 20px;
+            text-align: left;
+            font-size: 15px;
+            font-family: sans-serif;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        .choice-btn:hover {
+            background: #8b0000;
+            color: #ffffff;
+            border-color: #ff3333;
+            padding-left: 26px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-box">
+    <div id="stats-bar">
+        <div><span class="stat-label">Guerreiro:</span> <span class="stat-val">Kratos</span></div>
+        <div><span class="stat-label">Vida:</span> <span id="val-hp" class="stat-val">100</span></div>
+        <div><span class="stat-label">Fúria dos Titãs:</span> <span id="val-rage" class="stat-val">0</span></div>
+    </div>
+    
+    <div id="story-container">
+        <div id="speaker-title">Narrador</div>
+        <div id="dialogue-text">...</div>
+    </div>
+
+    <div id="choices-container"></div>
+</div>
+
+<script>
+class NarrativeGame {
+    constructor() {
+        this.hp = 100;
+        this.rage = 0;
+        this.currentNode = 'rodes_inicio';
+
+        this.speakerEl = document.getElementById('speaker-title');
+        this.textEl = document.getElementById('dialogue-text');
+        this.choicesEl = document.getElementById('choices-container');
+        this.hpEl = document.getElementById('val-hp');
+        this.rageEl = document.getElementById('val-rage');
+
+        this.storyGraph = {
+            rodes_inicio: {
+                speaker: "Atena",
+                text: "— Kratos, pare! Não destrua Rodes. As consequências de seus atos como Deus da Guerra serão devastadoras!",
+                choices: [
+                    { text: "Ignorar Atena e saltar do Olimpo direto para a batalha em Rodes.", target: "colosso_rodes" }
+                ]
+            },
+            colosso_rodes: {
+                speaker: "Narrador",
+                text: "Uma águia surge e rouba parte de seus poderes divinos, depositando-os no Colosso de Rodes. Em meio ao caos, Zeus surge dos céus e oferece a Lâmina do Olimpo, prometendo que apenas ela destruirá a estátua.",
+                choices: [
+                    { text: "Depositar o restante de sua essência divina na Lâmina e invadir o Colosso.", target: "destruicao_colosso" }
+                ]
+            },
+            destruicao_colosso: {
+                speaker: "Narrador",
+                text: "Você destrói o Colosso por dentro com a Lâmina! Porém, ao sair, a mão gigante da estátua cai sobre você, destruindo sua armadura. Enfraquecido e sem poderes divinos, você volta a ser mortal.",
+                choices: [
+                    { text: "Tentar alcançar a Lâmina do Olimpo no chão.", target: "traicao_zeus" }
+                ]
+            },
+            traicao_zeus: {
+                speaker: "Zeus",
+                text: "— O ciclo termina aqui, Kratos! Eu não permitirei que você tome o meu trono no Olimpo!",
+                choices: [
+                    { text: "Resistir ao golpe de Zeus.", target: "submundo", hp: -80 }
+                ]
+            },
+            submundo: {
+                speaker: "Gaia",
+                text: "Zeus atravessa seu peito com a Lâmina do Olimpo e o envia para as profundezas do Hades. Mas no abismo, uma voz ancestral ecoa...",
+                choices: [
+                    { text: "Escutar a voz da Titã Gaia.", target: "ajuda_gaia" }
+                ]
+            },
+            ajuda_gaia: {
+                speaker: "Gaia",
+                text: "— Levante-se, Kratos! Os deuses traíram você assim como traíram os Titãs. Busque as Irmãs do Destino; com o poder delas, você mudará o passado e derrotará Zeus!",
+                choices: [
+                    { text: "Aceitar a cura de Gaia e montar no Pégaso rumo à Ilha da Criação.", target: "caverna_tifao", hp: +80 }
+                ]
+            },
+            caverna_tifao: {
+                speaker: "Narrador",
+                text: "Após ser atacado no ar, você pousa na Caverna de Tifão. Lá você encontra Prometeu, condenado a ter suas vísceras devoradas por um pássaro diariamente por ter dado o fogo aos mortais.",
+                choices: [
+                    { text: "Arrancar o Arco de Tifão e quebrar as correntes de Prometeu para libertá-lo no Fogo Olímpico.", target: "ilha_criacao", rage: +50 }
+                ]
+            },
+            ilha_criacao: {
+                speaker: "Narrador",
+                text: "As cinzas de Prometeu lhe concedem a Fúria dos Titãs! Você chega à Ilha da Criação. Em sua jornada até o templo, você enfrenta Teseu, o Rei Bárbaro, arranca o Velo de Ouro de um Cérbero, mata Perseu e arranca as asas de Ícaro.",
+                choices: [
+                    { text: "Usar as asas de Ícaro para atravessar o abismo do Tártaro e encontrar Atlas.", target: "encontro_atlas" }
+                ]
+            },
+            encontro_atlas: {
+                speaker: "Atlas",
+                text: "— Kratos! Lembro-me da Lâmina com que Zeus nos derrotou na Grande Guerra... Se Gaia está com você, tome o meu poder para esmagar os olímpicos!",
+                choices: [
+                    { text: "Receber o Tremor de Atlas e marchar até o Palácio das Irmãs do Destino.", target: "palacio_irmas", rage: +50 }
+                ]
+            },
+            palacio_irmas: {
+                speaker: "Láquesis",
+                text: "— Você é um mero mortal, Kratos. Ninguém pode alterar o destino escrito por nós!",
+                choices: [
+                    { text: "Enfrontar Láquesis e Átropos viajando através do tempo de suas batalhas passadas.", target: "confronto_cloto" }
+                ]
+            },
+            confronto_cloto: {
+                speaker: "Narrador",
+                text: "Após selar Láquesis e Átropos no espelho do tempo, você confronta Cloto, a gigantesca guardiã dos Fios do Destino, e a elimina atravessando seu crânio com as engrenagens do templo.",
+                choices: [
+                    { text: "Assumir o controle do Tecelão do Tempo e retornar ao momento da traição de Zeus.", target: "duelo_final_zeus" }
+                ]
+            },
+            duelo_final_zeus: {
+                speaker: "Kratos",
+                text: "Você surge no exato instante em que Zeus tentava matá-lo no passado! Uma batalha colossal se inicia. Você usa o Velo de Ouro para refletir os raios de Zeus e o empala com a Lâmina do Olimpo!",
+                choices: [
+                    { text: "Desferir o golpe final em Zeus.", target: "morte_atena" }
+                ]
+            },
+            morte_atena: {
+                speaker: "Atena",
+                text: "— Não, Kratos! — Atena se lança na frente da Lâmina para proteger Zeus e é mortalmente ferida.",
+                choices: [
+                    { text: "Exigir saber por que ela se sacrificou por Zeus.", target: "revelacao_atena" }
+                ]
+            },
+            revelacao_atena: {
+                speaker: "Atena",
+                text: "— Zeus é seu pai, Kratos... Ele temia que você o destruísse, assim como Cronos fez com ele. Se Zeus cair, todo o Olimpo cairá junto...",
+                choices: [
+                    { text: "Declarar a guerra final contra todas as divindades do Olimpo.", target: "marcha_titas" }
+                ]
+            },
+            marcha_titas: {
+                speaker: "Kratos",
+                text: "— Se todos no Olimpo negarem a minha vingança, então todos no Olimpo MORRERÃO! A era dos deuses chegou ao fim!",
+                choices: [
+                    { text: "Voltar no tempo até a Grande Guerra e trazer os Titãs para o presente.", target: "fim_comeca" }
+                ]
+            },
+            fim_comeca: {
+                speaker: "Narrador",
+                text: "No topo do Monte Olimpo, Zeus convoca Poseidon, Hades, Hélio e Hermes. Subitamente, a montanha treme. Guiando os Titãs enquanto escala em direção ao Olimpo, Kratos brada: 'ZEUS! SEU FILHO RETORNOU! EU TRAGO A DESTRUIÇÃO DO OLIMPO!'",
+                choices: [
+                    { text: "O Fim Começa... (Reiniciar Saga)", target: "rodes_inicio", reset: true }
+                ]
+            }
+        };
+
+        this.renderNode(this.currentNode);
+    }
+
+    renderNode(nodeKey) {
+        const node = this.storyGraph[nodeKey];
+        if (!node) return;
+
+        this.speakerEl.innerText = node.speaker;
+        this.textEl.innerText = node.text;
+        this.choicesEl.innerHTML = '';
+
+        node.choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = choice.text;
+            btn.onclick = () => this.selectChoice(choice);
+            this.choicesEl.appendChild(btn);
+        });
+
+        this.updateUI();
+    }
+
+    selectChoice(choice) {
+        if (choice.reset) {
+            this.hp = 100;
+            this.rage = 0;
+        } else {
+            if (choice.hp) this.hp = Math.max(0, Math.min(100, this.hp + choice.hp));
+            if (choice.rage) this.rage = Math.max(0, Math.min(100, this.rage + choice.rage));
+        }
+
+        this.currentNode = choice.target;
+        this.renderNode(this.currentNode);
+    }
+
+    updateUI() {
+        this.hpEl.innerText = this.hp;
+        this.rageEl.innerText = this.rage;
+    }
+}
+
+window.onload = () => new NarrativeGame();
+</script>
+</body>
+</html>
